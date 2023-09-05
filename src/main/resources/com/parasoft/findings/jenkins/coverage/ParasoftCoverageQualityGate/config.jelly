@@ -12,6 +12,10 @@
         <f:select/>
     </f:entry>
 
+    <f:entry title="Reference Build" field="referenceBuildNumber">
+        <f:select/>
+    </f:entry>
+
     <f:entry title="${%title.criticality}" field="criticality"
              help="/plugin/parasoft-findings/help/parasoftCoverage/help-criticality.html">
         <f:select/>

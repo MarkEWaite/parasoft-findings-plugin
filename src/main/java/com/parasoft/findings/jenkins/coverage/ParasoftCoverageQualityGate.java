@@ -4,7 +4,9 @@ import edu.hm.hafner.util.VisibleForTesting;
 import hudson.Extension;
 import hudson.model.AbstractProject;
 import hudson.model.Item;
+import hudson.model.Run;
 import hudson.util.ListBoxModel;
+import hudson.util.RunList;
 import io.jenkins.plugins.coverage.metrics.model.Baseline;
 import io.jenkins.plugins.util.JenkinsFacade;
 import io.jenkins.plugins.util.QualityGate;
@@ -19,6 +21,8 @@ public class ParasoftCoverageQualityGate extends QualityGate {
 
     private Baseline baseline = Baseline.PROJECT;
 
+    private String referenceBuildNumber = "-";
+
     @DataBoundConstructor
     public ParasoftCoverageQualityGate(final double threshold,
                                        final Baseline baseline, final QualityGateCriticality criticality) {
@@ -32,6 +36,11 @@ public class ParasoftCoverageQualityGate extends QualityGate {
         this.baseline = baseline;
     }
 
+    @DataBoundSetter
+    public void setReferenceBuildNumber(String referenceBuildNumber) {
+        this.referenceBuildNumber = referenceBuildNumber;
+    }
+
     @Override
     public String getName() {
         return String.format("%s - %s", FORMATTER.getDisplayName(this.getBaseline()), FORMATTER.getMetricLineDisplayName());
@@ -39,6 +48,10 @@ public class ParasoftCoverageQualityGate extends QualityGate {
 
     public Baseline getBaseline() {
         return baseline;
+    }
+
+    public String getReferenceBuildNumber() {
+        return referenceBuildNumber;
     }
 
     @Extension
@@ -61,6 +74,22 @@ public class ParasoftCoverageQualityGate extends QualityGate {
         public ListBoxModel doFillBaselineItems(@AncestorInPath final AbstractProject<?, ?> project) {
             if (JENKINS.hasPermission(Item.CONFIGURE, project)) {
                 return FORMATTER.getBaselineItems();
+            }
+            return new ListBoxModel();
+        }
+
+        @POST
+        @SuppressWarnings("unused") // used by Stapler view data binding
+        public ListBoxModel doFillReferenceBuildNumberItems(@AncestorInPath final AbstractProject<?, ?> project) {
+            if (JENKINS.hasPermission(Item.CONFIGURE, project)) {
+                RunList<?> builds = project.getBuilds();
+                ListBoxModel options = new ListBoxModel();
+                for (Run build : builds) {
+                    String buildNumber = String.valueOf(build.number);
+                    String message = build.getBuildStatusSummary().message;
+                    options.add(String.format("Build #%s(%s)", buildNumber, message), buildNumber);
+                }
+                return options;
             }
             return new ListBoxModel();
         }
