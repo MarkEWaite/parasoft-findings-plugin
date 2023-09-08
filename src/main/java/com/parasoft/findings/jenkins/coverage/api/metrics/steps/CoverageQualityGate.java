@@ -32,6 +32,16 @@ public class CoverageQualityGate extends QualityGate {
     private final Metric metric;
     private Baseline baseline = Baseline.PROJECT;
 
+    private String referenceBuildNumber = "-";
+
+    public String getReferenceBuildNumber() {
+        return referenceBuildNumber;
+    }
+
+    public void setReferenceBuildNumber(String referenceBuildNumber) {
+        this.referenceBuildNumber = referenceBuildNumber;
+    }
+
     /**
      * Creates a new instance of {@link CoverageQualityGate}.
      *

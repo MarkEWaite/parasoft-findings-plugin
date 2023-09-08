@@ -268,6 +268,7 @@ public class ParasoftCoverageRecorder extends Recorder {
                 CoverageQualityGate coverageQualityGate = new CoverageQualityGate(parasoftCoverageQualityGate.getThreshold(), Metric.LINE);
                 coverageQualityGate.setBaseline(parasoftCoverageQualityGate.getBaseline());
                 coverageQualityGate.setCriticality(parasoftCoverageQualityGate.getCriticality());
+                coverageQualityGate.setReferenceBuildNumber(parasoftCoverageQualityGate.getReferenceBuildNumber());
                 coverageQualityGates.add(coverageQualityGate);
             }
         }

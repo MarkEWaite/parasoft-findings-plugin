@@ -8,12 +8,12 @@
     </st:attribute>
   </st:documentation>
 
-  <j:if test="${it.hasBaselineResult(baseline)}">
+  <j:if test="${coverageBuildResult.hasBaselineResult(baseline)}">
     <li>
-      <a href="${it.urlName}/#${baseline.url}">${it.getTitle(baseline)}</a>
+      <a href="${it.urlName}/#${baseline.url}">${coverageBuildResult.getTitle(baseline)}</a>
       <div class="${baseline}-summary">
-        <j:set var="values" value="${it.getAllValues(baseline)}"/>
-        <j:set var="formatter" value="${it.formatter}"/>
+        <j:set var="values" value="${coverageBuildResult.getAllValues(baseline)}"/>
+        <j:set var="formatter" value="${coverageBuildResult.formatter}"/>
         <j:set var="tooltip">
           <!-- This is an exact copy of the tooltip in CoverageMetricColumn -->
           <div class="jenkins-tooltip healthReportDetails jenkins-tooltip--table-wrapper">
@@ -56,18 +56,18 @@
         </j:set>
 
         <ul tooltip="${tooltip}" data-html-tooltip="${tooltip}">
-          <j:forEach var="value" items="${it.getValues(baseline)}">
+          <j:forEach var="value" items="${coverageBuildResult.getValues(baseline)}">
             <li>${formatter.formatValueWithMetric(value)}
-              <j:if test="${it.hasDelta(baseline, value.metric)}">
+              <j:if test="${coverageBuildResult.hasDelta(baseline, value.metric)}">
                 <j:choose>
-                  <j:when test="${it.isPositiveTrend(baseline, value.metric)}">
+                  <j:when test="${coverageBuildResult.isPositiveTrend(baseline, value.metric)}">
                     <j:set var="color" value="var(--green)"/>
                   </j:when>
                   <j:otherwise>
                     <j:set var="color" value="var(--red)"/>
                   </j:otherwise>
                 </j:choose>
-                <span style="color: ${color}">(${it.formatDelta(baseline, value.metric)})</span>
+                <span style="color: ${color}">(${coverageBuildResult.formatDelta(baseline, value.metric)})</span>
               </j:if>
             </li>
           </j:forEach>

@@ -404,10 +404,10 @@ public class CoverageRecorder extends Recorder {
             var action = reporter.publishAction(getActualId(), getName(), getIcon(), rootNode, run,
                     workspace, taskListener, getQualityGates(), getScm(),
                     getSourceCodeEncoding(), getSourceCodeRetention(), resultHandler);
-            if (!skipPublishingChecks) {
-                var checksPublisher = new CoverageChecksPublisher(action, rootNode, getChecksName(), getChecksAnnotationScope());
-                checksPublisher.publishCoverageReport(taskListener);
-            }
+//            if (!skipPublishingChecks) {
+//                var checksPublisher = new CoverageChecksPublisher(action, rootNode, getChecksName(), getChecksAnnotationScope());
+//                checksPublisher.publishCoverageReport(taskListener);
+//            }
         }
     }
 

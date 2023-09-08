@@ -7,6 +7,7 @@ import hudson.model.Item;
 import hudson.model.Run;
 import hudson.util.ListBoxModel;
 import com.parasoft.findings.jenkins.coverage.api.metrics.model.Baseline;
+import hudson.util.RunList;
 import io.jenkins.plugins.util.JenkinsFacade;
 import io.jenkins.plugins.util.QualityGate;
 import org.kohsuke.stapler.AncestorInPath;
@@ -84,10 +85,11 @@ public class ParasoftCoverageQualityGate extends QualityGate {
                 RunList<?> builds = project.getBuilds();
                 ListBoxModel options = new ListBoxModel();
                 for (Run build : builds) {
-                    String buildNumber = String.valueOf(build.number);
+                    String buildNumber = build.getExternalizableId();
                     String message = build.getBuildStatusSummary().message;
                     options.add(String.format("Build #%s(%s)", buildNumber, message), buildNumber);
                 }
+
                 return options;
             }
             return new ListBoxModel();
