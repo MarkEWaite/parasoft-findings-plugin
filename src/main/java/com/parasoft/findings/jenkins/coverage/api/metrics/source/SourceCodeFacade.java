@@ -37,8 +37,8 @@ import hudson.util.TextFile;
  */
 public class SourceCodeFacade {
     /** Toplevel directory in the build folder of the controller that contains the zipped source files. */
-    static final String COVERAGE_SOURCES_DIRECTORY = "coverage-sources";
-    static final String COVERAGE_SOURCES_ZIP = "coverage-sources.zip";
+    static final String COVERAGE_SOURCES_DIRECTORY = "parasoft-coverage-sources";
+    static final String COVERAGE_SOURCES_ZIP = "parasoft-coverage-sources.zip";
     static final int MAX_FILENAME_LENGTH = 245; // Windows has limitations on long file names
     static final String ZIP_FILE_EXTENSION = ".zip";
 

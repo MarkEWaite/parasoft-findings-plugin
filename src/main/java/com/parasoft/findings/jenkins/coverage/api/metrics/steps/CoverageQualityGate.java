@@ -32,14 +32,14 @@ public class CoverageQualityGate extends QualityGate {
     private final Metric metric;
     private Baseline baseline = Baseline.PROJECT;
 
-    private String referenceBuildNumber = "-";
+    private String referenceBuildId = "-";
 
-    public String getReferenceBuildNumber() {
-        return referenceBuildNumber;
+    public String getReferenceBuildId() {
+        return referenceBuildId;
     }
 
-    public void setReferenceBuildNumber(String referenceBuildNumber) {
-        this.referenceBuildNumber = referenceBuildNumber;
+    public void setReferenceBuildId(String referenceBuildId) {
+        this.referenceBuildId = referenceBuildId;
     }
 
     /**

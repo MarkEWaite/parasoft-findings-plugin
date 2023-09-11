@@ -141,16 +141,16 @@ public final class CoverageBuildAction extends BuildAction<Node> implements Stap
 
         if (canSerialize) {
             createXmlStream().write(owner.getRootDir().toPath().resolve(getBuildResultBaseName()), result);
-            coverageBuildResults.forEach(coverageBuildResult -> {
-                Optional<Run<?, ?>> referenceBuild = coverageBuildResult.getReferenceBuild();
-                if(referenceBuild.isPresent()) {
-                    createXmlStream().write(owner.getRootDir().toPath()
-                            .resolve(getBuildResultBaseName() + referenceBuild.get().getExternalizableId()), coverageBuildResult.getResult());
-                } else {
-                    createXmlStream().write(owner.getRootDir().toPath()
-                            .resolve(getBuildResultBaseName() + "-"), coverageBuildResult.getResult());
-                }
-            });
+//            coverageBuildResults.forEach(coverageBuildResult -> {
+//                Optional<Run<?, ?>> referenceBuild = coverageBuildResult.getReferenceBuild();
+//                if(referenceBuild.isPresent()) {
+//                    createXmlStream().write(owner.getRootDir().toPath()
+//                            .resolve(getBuildResultBaseName() + referenceBuild.get().getExternalizableId()), coverageBuildResult.getResult());
+//                } else {
+//                    createXmlStream().write(owner.getRootDir().toPath()
+//                            .resolve(getBuildResultBaseName() + "-"), coverageBuildResult.getResult());
+//                }
+//            });
         }
     }
 

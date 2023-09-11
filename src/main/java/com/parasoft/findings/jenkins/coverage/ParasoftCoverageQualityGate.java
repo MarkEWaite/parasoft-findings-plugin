@@ -2,8 +2,10 @@ package com.parasoft.findings.jenkins.coverage;
 
 import edu.hm.hafner.util.VisibleForTesting;
 import hudson.Extension;
+import hudson.PermalinkList;
 import hudson.model.AbstractProject;
 import hudson.model.Item;
+import hudson.model.PermalinkProjectAction;
 import hudson.model.Run;
 import hudson.util.ListBoxModel;
 import com.parasoft.findings.jenkins.coverage.api.metrics.model.Baseline;
@@ -21,7 +23,7 @@ public class ParasoftCoverageQualityGate extends QualityGate {
 
     private Baseline baseline = Baseline.PROJECT;
 
-    private String referenceBuildNumber = "-";
+    private String referenceBuildId = "-";
 
     @DataBoundConstructor
     public ParasoftCoverageQualityGate(final double threshold,
@@ -37,8 +39,8 @@ public class ParasoftCoverageQualityGate extends QualityGate {
     }
 
     @DataBoundSetter
-    public void setReferenceBuildNumber(String referenceBuildNumber) {
-        this.referenceBuildNumber = referenceBuildNumber;
+    public void setReferenceBuildId(String referenceBuildId) {
+        this.referenceBuildId = referenceBuildId;
     }
 
     @Override
@@ -50,8 +52,8 @@ public class ParasoftCoverageQualityGate extends QualityGate {
         return baseline;
     }
 
-    public String getReferenceBuildNumber() {
-        return referenceBuildNumber;
+    public String getReferenceBuildId() {
+        return referenceBuildId;
     }
 
     @Extension
@@ -80,14 +82,19 @@ public class ParasoftCoverageQualityGate extends QualityGate {
 
         @POST
         @SuppressWarnings("unused") // used by Stapler view data binding
-        public ListBoxModel doFillReferenceBuildNumberItems(@AncestorInPath final AbstractProject<?, ?> project) {
+        public ListBoxModel doFillReferenceBuildIdItems(@AncestorInPath final AbstractProject<?, ?> project) {
             if (JENKINS.hasPermission(Item.CONFIGURE, project)) {
-                RunList<?> builds = project.getBuilds();
                 ListBoxModel options = new ListBoxModel();
+                PermalinkList permalinks = project.getPermalinks();
+                for (PermalinkProjectAction.Permalink permalink : permalinks) {
+                    options.add(permalink.getDisplayName(), permalink.getId());
+                }
+
+                RunList<?> builds = project.getBuilds();
                 for (Run build : builds) {
-                    String buildNumber = build.getExternalizableId();
+                    String buildId = build.getExternalizableId();
                     String message = build.getBuildStatusSummary().message;
-                    options.add(String.format("Build #%s(%s)", buildNumber, message), buildNumber);
+                    options.add(String.format("Build #%s(%s)", buildId, message), buildId);
                 }
 
                 return options;

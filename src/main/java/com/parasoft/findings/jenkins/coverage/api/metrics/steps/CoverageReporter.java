@@ -4,10 +4,15 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
+import hudson.model.Job;
+import hudson.model.PermalinkProjectAction;
 import io.jenkins.plugins.util.JenkinsFacade;
 import org.apache.commons.lang3.math.Fraction;
 
@@ -30,7 +35,9 @@ import io.jenkins.plugins.prism.SourceCodeRetention;
 import io.jenkins.plugins.util.LogHandler;
 import io.jenkins.plugins.util.QualityGateResult;
 import io.jenkins.plugins.util.StageResultHandler;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 
+import static hudson.model.PermalinkProjectAction.Permalink.BUILTIN;
 import static java.util.stream.Collectors.groupingBy;
 
 /**
@@ -52,14 +59,30 @@ public class CoverageReporter {
         FilteredLog log = new FilteredLog("Errors while reporting code coverage results:");
 
         //Map<String, List<CoverageQualityGate>> 
+        //Map<String, List<CoverageQualityGate>> qualityGatesPerReferenceBuildId =
+        //        qualityGates.stream().collect(groupingBy(CoverageQualityGate::getReferenceBuildId));
+
+        // Group coverageQualityGates with realRefBuildId?
         Map<String, List<CoverageQualityGate>> qualityGatesPerReferenceBuildId =
-                qualityGates.stream().collect(groupingBy(CoverageQualityGate::getReferenceBuildNumber));
+                qualityGates.stream().collect(groupingBy(coverageQualityGate ->
+                        this.getReferenceBuildAction(build, id, log, coverageQualityGate.getReferenceBuildId())
+                                .right));
+        // Update qualityGates with realRefBuildId
+        qualityGatesPerReferenceBuildId.forEach((referenceBuildId, coverageQualityGates) -> {
+            coverageQualityGates.forEach(coverageQualityGate -> {
+                coverageQualityGate.setReferenceBuildId(referenceBuildId);
+            });
+        });
 
         List<CoverageBuildResult> coverageBuildResults = new ArrayList<>();
         qualityGatesPerReferenceBuildId.forEach((referenceBuildId, coverageQualityGates) -> {
             Node node = rootNode.copyTree();
 
-            Optional<CoverageBuildAction> possibleReferenceResult = getReferenceBuildAction(build, id, log, referenceBuildId);
+            ImmutablePair<Optional<CoverageBuildAction>, String> buildActionRefIdPair =
+                    getReferenceBuildAction(build, id, log, referenceBuildId);
+
+            Optional<CoverageBuildAction> possibleReferenceResult = buildActionRefIdPair.left;
+            String realRefBuildId = buildActionRefIdPair.right;
 
             CoverageBuildResult coverageBuildResult;
             if (possibleReferenceResult.isPresent()) {
@@ -98,8 +121,7 @@ public class CoverageReporter {
                 QualityGateResult qualityGateResult = evaluateQualityGates(node, log,
                         modifiedLinesCoverageRoot.aggregateValues(), modifiedLinesCoverageDelta, coverageDelta,
                         resultHandler, coverageQualityGates);
-
-                coverageBuildResult = new CoverageBuildResult(node, qualityGateResult, referenceBuildId, coverageDelta,
+                coverageBuildResult = new CoverageBuildResult(node, qualityGateResult, realRefBuildId, coverageDelta,
                         modifiedLinesCoverageRoot.aggregateValues(), modifiedLinesCoverageDelta,
                         aggregatedModifiedFilesCoverage, modifiedFilesCoverageDelta,
                         node.filterByIndirectChanges().aggregateValues());
@@ -107,7 +129,7 @@ public class CoverageReporter {
             else {
                 QualityGateResult qualityGateResult = evaluateQualityGates(node, log,
                         List.of(), new TreeMap<>(), new TreeMap<>(), resultHandler, coverageQualityGates);
-                coverageBuildResult = new CoverageBuildResult(node, qualityGateResult, NO_REFERENCE_BUILD);
+                coverageBuildResult = new CoverageBuildResult(node, qualityGateResult, realRefBuildId);
             }
 
             coverageBuildResults.add(coverageBuildResult);
@@ -202,55 +224,75 @@ public class CoverageReporter {
         return ((edu.hm.hafner.coverage.Coverage) value).isSet();
     }
 
-    private Optional<CoverageBuildAction> getReferenceBuildAction(final Run<?, ?> build, final String id, final FilteredLog log,
-                                                                  final String referenceBuildId) {
+    private ImmutablePair<Optional<CoverageBuildAction>, String> getReferenceBuildAction(final Run<?, ?> build, final String id, final FilteredLog log,
+                                                                                         final String referenceBuildId) {
         log.logInfo("Obtaining action of reference build");
 
-        //ReferenceFinder referenceFinder = new ReferenceFinder();
-        //Optional<Run<?, ?>> reference = referenceFinder.findReference(build, log);
-        Optional<Run<?, ?>> reference = new JenkinsFacade().getBuild(referenceBuildId);
 
+        Optional<Run<?, ?>> reference = getReferenceBuild(build.getParent(), referenceBuildId);
+
+        String realBuildId = NO_REFERENCE_BUILD;
         Optional<CoverageBuildAction> previousResult;
         if (reference.isPresent()) {
             Run<?, ?> referenceBuild = reference.get();
             log.logInfo("-> Using reference build '%s'", referenceBuild);
             previousResult = getPreviousResult(id, reference.get());
-            if (previousResult.isPresent()) {
-                Run<?, ?> fallbackBuild = previousResult.get().getOwner();
-                if (!fallbackBuild.equals(referenceBuild)) {
-                    log.logInfo("-> Reference build has no action, falling back to last build with action: '%s'",
-                            fallbackBuild.getDisplayName());
-                }
-            }
+            realBuildId = referenceBuild.getExternalizableId();
+//            if (previousResult.isPresent()) {
+//                Run<?, ?> fallbackBuild = previousResult.get().getOwner();
+//                if (!fallbackBuild.equals(referenceBuild)) {
+//                    log.logInfo("-> Reference build has no action, falling back to last build with action: '%s'",
+//                            fallbackBuild.getDisplayName());
+//                }
+//            }
         }
         else {
             previousResult = getPreviousResult(id, build.getPreviousBuild());
             previousResult.ifPresent(coverageBuildAction ->
                     log.logInfo("-> No reference build defined, falling back to previous build: '%s'",
                             coverageBuildAction.getOwner().getDisplayName()));
+            realBuildId = Objects.requireNonNull(build.getPreviousBuild()).getExternalizableId();
         }
 
         if (previousResult.isEmpty()) {
             log.logInfo("-> Found no reference result in reference build");
 
-            return Optional.empty();
+            return ImmutablePair.of(Optional.empty(), realBuildId);
         }
 
         CoverageBuildAction referenceAction = previousResult.get();
         log.logInfo("-> Found reference result in build '%s'", referenceAction.getOwner().getDisplayName());
 
-        return Optional.of(referenceAction);
+        return ImmutablePair.of(Optional.of(referenceAction), realBuildId);
+    }
+
+    private Optional<Run<?, ?>> getReferenceBuild(final Job<?, ?> job, final String referenceBuildId) {
+        Map<String, PermalinkProjectAction.Permalink> builtinPermalinkMap =
+                BUILTIN.stream().collect(Collectors.toMap(PermalinkProjectAction.Permalink::getId, Function.identity()));
+        if (builtinPermalinkMap.containsKey(referenceBuildId)) {
+            PermalinkProjectAction.Permalink p = job.getPermalinks().get(referenceBuildId);
+            if (p == null) {
+                return Optional.empty();
+            }
+            Run<?,?> run = p.resolve(job);
+            return (run != null) ? Optional.of(run) : Optional.empty();
+        } else {
+            //ReferenceFinder referenceFinder = new ReferenceFinder();
+            //Optional<Run<?, ?>> reference = referenceFinder.findReference(build, log);
+            return new JenkinsFacade().getBuild(referenceBuildId);
+        }
     }
 
     private Optional<CoverageBuildAction> getPreviousResult(final String id, @CheckForNull final Run<?, ?> startSearch) {
-        for (Run<?, ?> build = startSearch; build != null; build = build.getPreviousBuild()) {
+            Run<?, ?> build = startSearch;
+//        for (Run<?, ?> build = startSearch; build != null; build = build.getPreviousBuild()) {
             List<CoverageBuildAction> actions = build.getActions(CoverageBuildAction.class);
             for (CoverageBuildAction action : actions) {
                 if (action.getUrlName().equals(id)) {
                     return Optional.of(action);
                 }
             }
-        }
+//        }
         return Optional.empty();
     }
 }

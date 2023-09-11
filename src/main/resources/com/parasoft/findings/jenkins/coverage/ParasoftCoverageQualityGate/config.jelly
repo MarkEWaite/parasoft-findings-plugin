@@ -12,7 +12,7 @@
         <f:select/>
     </f:entry>
 
-    <f:entry title="Reference Build" field="referenceBuildNumber">
+    <f:entry title="Reference Build" field="referenceBuildId">
         <f:select/>
     </f:entry>
 
