@@ -322,10 +322,10 @@ public class CoverageViewModel extends DefaultAsyncTableContentProvider implemen
 //        }
 
         if (StringUtils.equals(actualId, ABSOLUTE_COVERAGE_TABLE_ID)) {
-            return new CoverageTableModel(actualId, getNode(), renderer, colorProvider);
+            return new CoverageTableModel(tableId, getNode(), renderer, colorProvider);
         } else if (StringUtils.startsWith(actualId, MODIFIED_LINES_COVERAGE_TABLE_ID_PREFIX)) {
             String refId = StringUtils.removeEnd(actualId.replace(MODIFIED_LINES_COVERAGE_TABLE_ID_PREFIX, StringUtils.EMPTY), "-table");
-            return new ModifiedLinesCoverageTableModel(actualId, getNode(refId), modifiedLinesCoverageTreeRootMap.get(refId), renderer,
+            return new ModifiedLinesCoverageTableModel(tableId, getNode(refId), modifiedLinesCoverageTreeRootMap.get(refId), renderer,
                     colorProvider);
         } else {
             throw new NoSuchElementException("No such table with id " + actualId);
