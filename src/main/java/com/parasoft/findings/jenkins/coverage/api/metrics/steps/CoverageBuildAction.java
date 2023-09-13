@@ -2,6 +2,7 @@ package com.parasoft.findings.jenkins.coverage.api.metrics.steps;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.NavigableMap;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -220,9 +221,17 @@ public final class CoverageBuildAction extends BuildAction<Node> implements Stap
     public CoverageViewModel getTarget() {
 //        return new CoverageViewModel(getOwner(), getUrlName(), name, getResult(),
 //                getStatistics(), getQualityGateResult(), getReferenceBuildLink(), log, this::createChartModel);
+//        return new CoverageViewModel(getOwner(), getUrlName(), name, coverageBuildResults.get(0).getResult(),
+//                getStatistics(), coverageBuildResults.get(0).getQualityGateResult(), coverageBuildResults.get(0).getReferenceBuildLink(),
+//                log, this::createChartModel);
+        Map<String, Node> nodesMap = new TreeMap<>();
+        coverageBuildResults.forEach(it -> {
+            nodesMap.put(it.getReferenceBuildId(), it.getResult());
+        });
         return new CoverageViewModel(getOwner(), getUrlName(), name, coverageBuildResults.get(0).getResult(),
-                getStatistics(), coverageBuildResults.get(0).getQualityGateResult(), coverageBuildResults.get(0).getReferenceBuildLink(),
+                nodesMap,
                 log, this::createChartModel);
+
     }
 
     private String createChartModel(final String configuration) {

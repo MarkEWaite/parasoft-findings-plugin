@@ -2,13 +2,17 @@ package com.parasoft.findings.jenkins.coverage.api.metrics.steps;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.NavigableSet;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -32,7 +36,6 @@ import edu.umd.cs.findbugs.annotations.CheckForNull;
 import org.kohsuke.stapler.StaplerRequest;
 import org.kohsuke.stapler.StaplerResponse;
 import org.kohsuke.stapler.bind.JavaScriptMethod;
-import hudson.model.Api;
 import hudson.model.ModelObject;
 import hudson.model.Run;
 
@@ -41,7 +44,6 @@ import com.parasoft.findings.jenkins.coverage.api.metrics.charts.TreeMapNodeConv
 import com.parasoft.findings.jenkins.coverage.api.metrics.color.ColorProvider;
 import com.parasoft.findings.jenkins.coverage.api.metrics.color.ColorProviderFactory;
 import com.parasoft.findings.jenkins.coverage.api.metrics.color.CoverageColorJenkinsId;
-import com.parasoft.findings.jenkins.coverage.api.metrics.model.CoverageStatistics;
 import com.parasoft.findings.jenkins.coverage.api.metrics.model.ElementFormatter;
 import com.parasoft.findings.jenkins.coverage.api.metrics.source.SourceCodeFacade;
 import com.parasoft.findings.jenkins.coverage.api.metrics.source.SourceViewModel;
@@ -51,7 +53,6 @@ import com.parasoft.findings.jenkins.coverage.api.metrics.steps.CoverageTableMod
 import io.jenkins.plugins.datatables.DefaultAsyncTableContentProvider;
 import io.jenkins.plugins.datatables.TableModel;
 import io.jenkins.plugins.util.BuildResultNavigator;
-import io.jenkins.plugins.util.QualityGateResult;
 
 /**
  * Server side model that provides the data for the details view of the coverage results. The layout of the associated
@@ -67,7 +68,7 @@ public class CoverageViewModel extends DefaultAsyncTableContentProvider implemen
     private static final SourceCodeFacade SOURCE_CODE_FACADE = new SourceCodeFacade();
 
     static final String ABSOLUTE_COVERAGE_TABLE_ID = "absolute-coverage-table";
-    static final String MODIFIED_LINES_COVERAGE_TABLE_ID = "modified-lines-coverage-table";
+    static final String MODIFIED_LINES_COVERAGE_TABLE_ID_PREFIX = "modified-lines-coverage-";
     static final String INDIRECT_COVERAGE_TABLE_ID = "indirect-coverage-table";
     private static final String INLINE_SUFFIX = "-inline";
     private static final String INFO_MESSAGES_VIEW_URL = "info";
@@ -77,23 +78,33 @@ public class CoverageViewModel extends DefaultAsyncTableContentProvider implemen
     private static final String UNDEFINED = "-";
     private final Run<?, ?> owner;
     private final String optionalName;
-    private final CoverageStatistics statistics;
-    private final QualityGateResult qualityGateResult;
-    private final String referenceBuild;
+//    private final CoverageStatistics statistics;
+//    private final QualityGateResult qualityGateResult;
+//    private final String referenceBuild;
     private final FilteredLog log;
     private final Node node;
+
+    private final Map<String, Node> nodesMap;
     private final String id;
 
-    private final Node modifiedLinesCoverageTreeRoot;
-    private final Node indirectCoverageChangesTreeRoot;
+    private final Map<String, Node> modifiedLinesCoverageTreeRootMap;
+    //private final Node modifiedLinesCoverageTreeRoot;
+    //private final Node indirectCoverageChangesTreeRoot;
+
+    private final Set<String> referenceBuildIds;
+
+    public Set<String> getReferenceBuildIds() {
+        return referenceBuildIds;
+    }
+
     private final Function<String, String> trendChartFunction;
 
     private ColorProvider colorProvider = ColorProviderFactory.createDefaultColorProvider();
 
     @SuppressWarnings("checkstyle:ParameterNumber")
-    CoverageViewModel(final Run<?, ?> owner, final String id, final String optionalName, final Node node,
-            final CoverageStatistics statistics, final QualityGateResult qualityGateResult,
-            final String referenceBuild, final FilteredLog log, final Function<String, String> trendChartFunction) {
+    CoverageViewModel(final Run<?, ?> owner, final String id, final String optionalName, final Node node, final Map<String, Node> nodesMap,
+            //final CoverageStatistics statistics, final QualityGateResult qualityGateResult, final String referenceBuild,
+                      final FilteredLog log, final Function<String, String> trendChartFunction) {
         super();
 
         this.owner = owner;
@@ -102,15 +113,22 @@ public class CoverageViewModel extends DefaultAsyncTableContentProvider implemen
         this.optionalName = optionalName;
 
         this.node = node;
-        this.statistics = statistics;
-        this.qualityGateResult = qualityGateResult;
-        this.referenceBuild = referenceBuild;
+        this.nodesMap = nodesMap;
+//        this.statistics = statistics;
+//        this.qualityGateResult = qualityGateResult;
+//        this.referenceBuild = referenceBuild;
 
         this.log = log;
 
         // initialize filtered coverage trees so that they will not be calculated multiple times
-        modifiedLinesCoverageTreeRoot = node.filterByModifiedLines();
-        indirectCoverageChangesTreeRoot = node.filterByIndirectChanges();
+        modifiedLinesCoverageTreeRootMap = new TreeMap<>();
+        referenceBuildIds = new TreeSet<>();
+        nodesMap.forEach((key, value) -> {
+            modifiedLinesCoverageTreeRootMap.put(key, value.filterByModifiedLines());
+            referenceBuildIds.add(key);
+        });
+//        modifiedLinesCoverageTreeRoot = node.filterByModifiedLines();
+//        indirectCoverageChangesTreeRoot = node.filterByIndirectChanges();
         this.trendChartFunction = trendChartFunction;
     }
 
@@ -124,6 +142,10 @@ public class CoverageViewModel extends DefaultAsyncTableContentProvider implemen
 
     public Node getNode() {
         return node;
+    }
+
+    public Node getNode(String refId) {
+        return nodesMap.get(refId);
     }
 
     public ElementFormatter getFormatter() {
@@ -160,9 +182,9 @@ public class CoverageViewModel extends DefaultAsyncTableContentProvider implemen
      *
      * @return the remote API
      */
-    public Api getApi() {
-        return new Api(new CoverageApi(statistics, qualityGateResult, referenceBuild));
-    }
+//    public Api getApi() {
+//        return new Api(new CoverageApi(statistics, qualityGateResult, referenceBuild));
+//    }
 
     /**
      * Gets a set of color IDs which can be used to dynamically load the defined Jenkins colors.
@@ -286,17 +308,27 @@ public class CoverageViewModel extends DefaultAsyncTableContentProvider implemen
         RowRenderer renderer = createRenderer(tableId);
 
         String actualId = tableId.replace(INLINE_SUFFIX, StringUtils.EMPTY);
-        switch (actualId) {
-            case ABSOLUTE_COVERAGE_TABLE_ID:
-                return new CoverageTableModel(tableId, getNode(), renderer, colorProvider);
-            case MODIFIED_LINES_COVERAGE_TABLE_ID:
-                return new ModifiedLinesCoverageTableModel(tableId, getNode(), modifiedLinesCoverageTreeRoot, renderer,
-                        colorProvider);
-            case INDIRECT_COVERAGE_TABLE_ID:
-                return new IndirectCoverageChangesTable(tableId, getNode(), indirectCoverageChangesTreeRoot, renderer,
-                        colorProvider);
-            default:
-                throw new NoSuchElementException("No such table with id " + actualId);
+//        switch (actualId) {
+//            case ABSOLUTE_COVERAGE_TABLE_ID:
+//                return new CoverageTableModel(tableId, getNode(), renderer, colorProvider);
+//            case MODIFIED_LINES_COVERAGE_TABLE_ID:
+//                return new ModifiedLinesCoverageTableModel(tableId, getNode(), modifiedLinesCoverageTreeRoot, renderer,
+//                        colorProvider);
+//            case INDIRECT_COVERAGE_TABLE_ID:
+//                return new IndirectCoverageChangesTable(tableId, getNode(), indirectCoverageChangesTreeRoot, renderer,
+//                        colorProvider);
+//            default:
+//                throw new NoSuchElementException("No such table with id " + actualId);
+//        }
+
+        if (StringUtils.equals(actualId, ABSOLUTE_COVERAGE_TABLE_ID)) {
+            return new CoverageTableModel(actualId, getNode(), renderer, colorProvider);
+        } else if (StringUtils.startsWith(actualId, MODIFIED_LINES_COVERAGE_TABLE_ID_PREFIX)) {
+            String refId = StringUtils.removeEnd(actualId.replace(MODIFIED_LINES_COVERAGE_TABLE_ID_PREFIX, StringUtils.EMPTY), "-table");
+            return new ModifiedLinesCoverageTableModel(actualId, getNode(refId), modifiedLinesCoverageTreeRootMap.get(refId), renderer,
+                    colorProvider);
+        } else {
+            throw new NoSuchElementException("No such table with id " + actualId);
         }
     }
 
@@ -379,13 +411,16 @@ public class CoverageViewModel extends DefaultAsyncTableContentProvider implemen
             content = SOURCE_CODE_FACADE.read(rootDir, getId(), sourceNode.getRelativePath());
         }
         if (!content.isEmpty()) {
-            String cleanTableId = StringUtils.removeEnd(tableId, INLINE_SUFFIX);
-            if (MODIFIED_LINES_COVERAGE_TABLE_ID.equals(cleanTableId)) {
+//            String cleanTableId = StringUtils.removeEnd(tableId, INLINE_SUFFIX);
+//            if (MODIFIED_LINES_COVERAGE_TABLE_ID_PREFIX.equals(cleanTableId)) {
+//                return SOURCE_CODE_FACADE.calculateModifiedLinesCoverageSourceCode(content, sourceNode);
+//            }
+            if (StringUtils.startsWith(tableId, MODIFIED_LINES_COVERAGE_TABLE_ID_PREFIX)) {
                 return SOURCE_CODE_FACADE.calculateModifiedLinesCoverageSourceCode(content, sourceNode);
             }
-            else if (INDIRECT_COVERAGE_TABLE_ID.equals(cleanTableId)) {
-                return SOURCE_CODE_FACADE.calculateIndirectCoverageChangesSourceCode(content, sourceNode);
-            }
+//            else if (INDIRECT_COVERAGE_TABLE_ID.equals(cleanTableId)) {
+//                return SOURCE_CODE_FACADE.calculateIndirectCoverageChangesSourceCode(content, sourceNode);
+//            }
             else {
                 return content;
             }
@@ -409,7 +444,19 @@ public class CoverageViewModel extends DefaultAsyncTableContentProvider implemen
      * @return {@code true} whether modified lines coverage exists, else {@code false}
      */
     public boolean hasModifiedLinesCoverage() {
-        return !modifiedLinesCoverageTreeRoot.isEmpty();
+        for (Map.Entry<String, Node> entry : modifiedLinesCoverageTreeRootMap.entrySet()) {
+            Node value = entry.getValue();
+            if (!value.isEmpty()) {
+                return true;
+            }
+        }
+        return false;
+        //return !modifiedLinesCoverageTreeRoot.isEmpty();
+    }
+
+    public boolean hasModifiedLinesCoverage(String refId) {
+        Node node1 = modifiedLinesCoverageTreeRootMap.get(refId);
+        return !node1.isEmpty();
     }
 
     /**
@@ -418,7 +465,8 @@ public class CoverageViewModel extends DefaultAsyncTableContentProvider implemen
      * @return {@code true} whether indirect coverage changes exist, else {@code false}
      */
     public boolean hasIndirectCoverageChanges() {
-        return !indirectCoverageChangesTreeRoot.isEmpty();
+//        return !indirectCoverageChangesTreeRoot.isEmpty();
+        return false;
     }
 
     /**

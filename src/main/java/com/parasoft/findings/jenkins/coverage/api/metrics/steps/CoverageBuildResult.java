@@ -35,6 +35,10 @@ public class CoverageBuildResult {
     private static final String NO_REFERENCE_BUILD = "-";
     private final String referenceBuildId;
 
+    public String getReferenceBuildId() {
+        return referenceBuildId;
+    }
+
     private final QualityGateResult qualityGateResult;
 
     private Node result;

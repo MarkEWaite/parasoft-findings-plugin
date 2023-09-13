@@ -75,7 +75,12 @@
 
       <j:if test="${hasModifiedLinesCoverage}">
         <div role="tabpanel" id="changeCoverage" class="tab-pane fade" aria-labelledby="changeCoverage-tab">
-          <cov:coverage-table id="modified-lines-coverage" title="${%Coverage of modified lines}" symbol="symbol-diff-stat plugin-forensics-api"/>
+<!--          <cov:coverage-table id="modified-lines-coverage" title="${%Coverage of modified lines}" symbol="symbol-diff-stat plugin-forensics-api"/>-->
+          <j:forEach var="referenceBuildId" items="${it.referenceBuildIds}">
+            <j:if test="${it.hasModifiedLinesCoverage(referenceBuildId)}" >
+              <cov:coverage-table id="modified-lines-coverage-${referenceBuildId}" title="${%Coverage of modified lines} for ${referenceBuildId}" symbol="symbol-diff-stat plugin-forensics-api"/>
+            </j:if>
+          </j:forEach>
         </div>
       </j:if>
 
