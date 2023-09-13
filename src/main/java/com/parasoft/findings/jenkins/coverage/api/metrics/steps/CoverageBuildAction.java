@@ -220,16 +220,18 @@ public final class CoverageBuildAction extends BuildAction<Node> implements Stap
     public CoverageViewModel getTarget() {
 //        return new CoverageViewModel(getOwner(), getUrlName(), name, getResult(),
 //                getStatistics(), getQualityGateResult(), getReferenceBuildLink(), log, this::createChartModel);
-        return null;
+        return new CoverageViewModel(getOwner(), getUrlName(), name, coverageBuildResults.get(0).getResult(),
+                getStatistics(), coverageBuildResults.get(0).getQualityGateResult(), coverageBuildResults.get(0).getReferenceBuildLink(),
+                log, this::createChartModel);
     }
 
-//    private String createChartModel(final String configuration) {
-//        // FIXME: add without optional
-//        var iterable = new GenericBuildActionIterator.BuildActionIterable<>(CoverageBuildAction.class, Optional.of(this),
-//                action -> getUrlName().equals(action.getUrlName()), CoverageBuildAction::getStatistics);
-//        return new JacksonFacade().toJson(
-//                new CoverageTrendChart().create(iterable, ChartModelConfiguration.fromJson(configuration)));
-//    }
+    private String createChartModel(final String configuration) {
+        // FIXME: add without optional
+        var iterable = new GenericBuildActionIterator.BuildActionIterable<>(CoverageBuildAction.class, Optional.of(this),
+                action -> getUrlName().equals(action.getUrlName()), CoverageBuildAction::getStatistics);
+        return new JacksonFacade().toJson(
+                new CoverageTrendChart().create(iterable, ChartModelConfiguration.fromJson(configuration)));
+    }
 
     @NonNull
     @Override
