@@ -459,6 +459,10 @@ public class CoverageViewModel extends DefaultAsyncTableContentProvider implemen
         return !node1.isEmpty();
     }
 
+    public String normalizeReferenceBuildId(String refId) {
+        return StringUtils.replace(refId, "#", "-");
+    }
+
     /**
      * Checks whether indirect coverage changes exist.
      *
