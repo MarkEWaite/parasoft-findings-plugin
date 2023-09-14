@@ -469,6 +469,11 @@ const CoverageChartGenerator = function ($) {
                     table.column(1).search(showChanged ? 'true' : '').draw();
                 });
             });
+
+            $("#dropdownExample .dropdown-menu li a").click(function(){
+                  $(".btn:first-child").text($(this).text());
+                  $(".btn:first-child").val($(this).text());
+            });
         });
     }
 };

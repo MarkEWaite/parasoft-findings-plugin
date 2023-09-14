@@ -75,26 +75,39 @@
 
       <j:if test="${hasModifiedLinesCoverage}">
         <div role="tabpanel" id="changeCoverage" class="tab-pane fade" aria-labelledby="changeCoverage-tab">
-<!--          <cov:coverage-table id="modified-lines-coverage" title="${%Coverage of modified lines}" symbol="symbol-diff-stat plugin-forensics-api"/>-->
-        <div class="accordion" id="accordionPanelsStayOpenExample">
-          <j:forEach var="referenceBuildId" items="${it.referenceBuildIds}">
-            <j:set var="refId" value="${it.normalizeReferenceBuildId(referenceBuildId)}"/>
-            <j:if test="${it.hasModifiedLinesCoverage(referenceBuildId)}" >
-              <div class="accordion-item">
-                <h2 class="accordion-header">
-                  <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#panelsStayOpen-${refId}" aria-expanded="true" aria-controls="panelsStayOpen-collapseOne">
-                    ${referenceBuildId}
-                  </button>
-                </h2>
-                <div id="panelsStayOpen-${refId}" class="accordion-collapse collapse">
-                  <div class="accordion-body">
-                    <cov:coverage-table id="modified-lines-coverage-${referenceBuildId}" title="${%Coverage of modified lines} for ${referenceBuildId}" symbol="symbol-diff-stat plugin-forensics-api"/>
-                  </div>
+          <!--          <cov:coverage-table id="modified-lines-coverage" title="${%Coverage of modified lines}" symbol="symbol-diff-stat plugin-forensics-api"/>-->
+          <div id="dropdownExample">
+            <div class="dropdown">
+              <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                Select Reference Build
+              </button>
+              <ul class="dropdown-menu">
+                <j:forEach var="referenceBuildId" items="${it.referenceBuildIds}">
+                  <j:set var="refId" value="${it.normalizeReferenceBuildId(referenceBuildId)}"/>
+                  <j:if test="${it.hasModifiedLinesCoverage(referenceBuildId)}">
+<!--                    <li><button class="btn btn-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#collapseExample-${refId}" aria-expanded="false" aria-controls="collapseExample">-->
+<!--                      ${referenceBuildId}-->
+<!--                    </button></li>-->
+                    <li>
+                      <a class="dropdown-item" data-bs-toggle="collapse" href="#collapseExample-${refId}" role="button" aria-expanded="false" aria-controls="collapseExample-${refId}">
+                        ${referenceBuildId}
+                      </a>
+                    </li>
+                  </j:if>
+                </j:forEach>
+              </ul>
+            </div>
+            <j:forEach var="referenceBuildId" items="${it.referenceBuildIds}">
+              <j:set var="refId" value="${it.normalizeReferenceBuildId(referenceBuildId)}"/>
+              <j:if test="${it.hasModifiedLinesCoverage(referenceBuildId)}">
+                <div class="collapse" id="collapseExample-${refId}" data-bs-parent="#dropdownExample">
+                  <cov:coverage-table id="modified-lines-coverage-${referenceBuildId}"
+                                      title="${%Coverage of modified lines} for ${referenceBuildId}"
+                                      symbol="symbol-diff-stat plugin-forensics-api"/>
                 </div>
-              </div>
-            </j:if>
-          </j:forEach>
-        </div>
+              </j:if>
+            </j:forEach>
+          </div>
         </div>
       </j:if>
 
