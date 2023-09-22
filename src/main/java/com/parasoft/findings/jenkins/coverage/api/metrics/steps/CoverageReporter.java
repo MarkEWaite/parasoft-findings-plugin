@@ -264,6 +264,7 @@ public class CoverageReporter {
         if (reference.isPresent()) {
             Run<?, ?> referenceBuild = reference.get();
             log.logInfo("-> Using reference build '%s'", referenceBuild);
+            // TODO Pass in possibleRefResultsPerActualBuildId and get action from it first.
             previousResult = getPreviousResult(id, referenceBuild);
 
             if (previousResult.isEmpty()) {
